@@ -1,0 +1,52 @@
+version: '3'
+services:
+  # Spring Boot 애플리케이션
+  springboot:
+    build:
+      context: ./Backend  # Spring Boot 애플리케이션이 위치한 경로
+      dockerfile: Dockerfile  # Dockerfile 이름이 다른 경우 변경 필요
+    container_name: springboot
+    command: ./gradlew bootRun  # Gradle Wrapper를 사용하여 Spring Boot 애플리케이션 실행
+    ports:
+      - "8080:8080"  # Spring Boot 애플리케이션 포트
+    restart: always
+    depends_on:
+      - mysqldb
+    env_file:
+      - .env
+    networks:
+      - app-tier
+
+  # MySQL 데이터베이스
+  mysqldb:
+    image: mysql:latest
+    env_file:
+      - .env
+    ports:
+      - '3306:3306'
+    volumes:
+      - 'mysqldata:/var/lib/mysql'
+    networks:
+      - app-tier
+
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    links:
+      - mysqldb
+    ports:
+      - 8080:80
+    environment:
+      PMA_ARBITRARY: 1
+      PMA_HOST: mysqldb
+      PMA_PORT: 3306
+    networks:
+      - app-tier
+
+volumes:
+  mysqldata:
+
+networks:
+  app-tier:
+    driver: bridge
